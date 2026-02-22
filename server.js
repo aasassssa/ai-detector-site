@@ -4,30 +4,34 @@ const path = require("path");
 const fs = require("fs");
 
 const app = express();
-
-// Hosting platforms provide PORT automatically
 const PORT = process.env.PORT || 3005;
-
-// Example database file
-const dbPath = path.join(__dirname, "db.json");
-
-// Ensure db file exists
-if (!fs.existsSync(dbPath)) {
-  fs.writeFileSync(dbPath, JSON.stringify({}));
-}
 
 // Middleware
 app.use(express.json());
+
+// Serve static from both possible locations
+app.use(express.static(__dirname));
 app.use(express.static(path.join(__dirname, "public")));
 
-// Test route
-app.get("/api/health", (req, res) => {
-  res.json({ status: "ok" });
+// Root route (handles both root and /public setups)
+app.get("/", (req, res) => {
+  const publicIndex = path.join(__dirname, "public", "index.html");
+  const rootIndex = path.join(__dirname, "index.html");
+
+  if (fs.existsSync(publicIndex)) {
+    return res.sendFile(publicIndex);
+  }
+
+  if (fs.existsSync(rootIndex)) {
+    return res.sendFile(rootIndex);
+  }
+
+  res.status(404).send("index.html not found");
 });
 
-// Root route (prevents "Cannot GET /")
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
+// Health check (optional)
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok" });
 });
 
 // Start server
