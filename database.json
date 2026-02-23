@@ -1,0 +1,36 @@
+{
+  "users": [
+    {
+      "email": "admin@site.com",
+      "password": "admin123",
+      "admin": true
+    },
+    {
+      "username": "admin",
+      "password": "admin123",
+      "isAdmin": true
+    },
+    {
+      "username": "admin1111",
+      "password": "admin123",
+      "isAdmin": false
+    },
+    {
+      "username": "testingaccount",
+      "password": "12",
+      "isAdmin": false
+    },
+    {
+      "username": "test",
+      "password": "test",
+      "isAdmin": false
+    },
+    {
+      "username": "Username",
+      "password": "Password",
+      "isAdmin": false
+    }
+  ],
+  "submissions": [],
+  "overrides": {}
+}
