@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AI Detector</title>
+<style>
+body {
+  background:#111;
+  color:#fff;
+  font-family:Arial, sans-serif;
+  text-align:center;
+  padding:40px;
+}
+
+textarea {
+  width:80%;
+  height:200px;
+  background:#222;
+  color:#fff;
+  border:1px solid #555;
+  padding:10px;
+  font-size:16px;
+  resize:none;
+}
+
+button {
+  margin-top:15px;
+  padding:10px 20px;
+  font-size:16px;
+  background:#0af;
+  border:none;
+  color:#fff;
+  cursor:pointer;
+}
+
+button:hover {
+  background:#08c;
+}
+
+#result {
+  margin-top:25px;
+  font-size:22px;
+  font-weight:bold;
+}
+
+#adminBtn {
+  background:#c33;
+  display:none;
+  margin-top:15px;
+}
+
+#logoutBtn {
+  background:#555;
+  margin-top:10px;
+}
+</style>
+</head>
+<body>
+
+<h1>AI Text Detector</h1>
+
+<textarea id="inputText" placeholder="Paste text here..."></textarea>
+<br>
+<button onclick="detect()">Detect AI</button>
+<br>
+<button id="adminBtn" onclick="location.href='admin.html'">Admin Panel</button>
+<br>
+<button id="logoutBtn" onclick="logout()">Logout</button>
+
+<div id="result"></div>
+
+<script>
+// Require login
+const username = localStorage.getItem("username");
+const isAdmin = localStorage.getItem("isAdmin");
+
+if (!username) {
+  window.location.href = "login.html"; // redirect to login if not logged in
+} else if (isAdmin === "true") {
+  const btn = document.getElementById("adminBtn");
+  if (btn) btn.style.display = "inline-block";
+}
+
+function logout() {
+  localStorage.removeItem("username");
+  localStorage.removeItem("isAdmin");
+  window.location.href = "login.html";
+}
+
+async function detect() {
+  const input = document.getElementById("inputText");
+  const result = document.getElementById("result");
+  const text = input.value.trim();
+
+  if (!text) {
+    result.textContent = "Enter text.";
+    result.style.color = "red";
+    return;
+  }
+
+  result.textContent = "Analyzing...";
+  result.style.color = "yellow";
+
+  // 3-second delay
+  await new Promise(r => setTimeout(r, 3000));
+
+  try {
+    // Check override
+    // Check override
+const oRes = await fetch(`/override?username=${username}`);
+const oData = await oRes.json();
+
+if (oData.override !== null && oData.override !== undefined) {
+  const score = Number(oData.override);
+  result.textContent = `AI Probability: ${score}%`;
+
+  // Use same color logic as normal detection
+  if (score > 70) result.style.color = "red";
+  else if (score > 40) result.style.color = "orange";
+  else result.style.color = "lime";
+
+  return;
+}
+
+    // Normal detection
+    const dRes = await fetch("/detect", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ text })
+    });
+
+    const dData = await dRes.json();
+    const score = Number(dData.score) || 0;
+
+    result.textContent = `AI Probability: ${score}%`;
+
+    if (score > 70) result.style.color = "red";
+    else if (score > 40) result.style.color = "orange";
+    else result.style.color = "lime";
+
+  } catch (e) {
+    console.error(e);
+    result.textContent = "Detection error.";
+    result.style.color = "red";
+  }
+}
+</script>
+
+</body>
+</html>
