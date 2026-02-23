@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Panel</title>
+    <style>
+        body { background:#222; color:#fff; font-family:sans-serif; text-align:center; margin-top:40px; }
+        select, input, button { padding:10px; margin:8px; font-size:16px; }
+        #status { margin-top:20px; font-size:16px; }
+    </style>
+</head>
+<body>
+
+<h1>Admin Panel</h1>
+
+<select id="userSelect"></select><br>
+<input id="percentInput" type="number" min="0" max="100" placeholder="0-100"><br>
+<button onclick="setOverride()">Set Override</button>
+<button onclick="clearOverride()">Clear Override</button><br><br>
+<button onclick="back()">Back</button>
+<button onclick="logout()">Logout</button>
+
+<div id="status"></div>
+
+<script>
+const statusEl = document.getElementById("status");
+const userSelect = document.getElementById("userSelect");
+const percentInput = document.getElementById("percentInput");
+
+// --- Login protection ---
+window.addEventListener("DOMContentLoaded", async () => {
+    const username = localStorage.getItem("username");
+    const isAdmin = localStorage.getItem("isAdmin");
+
+    if (!username || isAdmin !== "true") {
+        window.location.href = "login.html";
+        return;
+    }
+
+    // Load users for dropdown
+    try {
+        const res = await fetch("/getUsers");
+        const users = await res.json();
+        users.forEach(u => {
+            const name = u.username || u.email;
+            const opt = document.createElement("option");
+            opt.value = name;
+            opt.textContent = name;
+            userSelect.appendChild(opt);
+        });
+    } catch {
+        statusEl.style.color = "#f00";
+        statusEl.textContent = "Failed to load users";
+    }
+});
+
+// --- Set override ---
+async function setOverride() {
+    const target = userSelect.value;
+    const value = percentInput.value;
+
+    if (value === "" || value < 0 || value > 100) {
+        statusEl.textContent = "Enter a valid number 0-100";
+        statusEl.style.color = "#f00";
+        return;
+    }
+
+    try {
+        const res = await fetch("/admin/override", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ targetUser: target, value: Number(value) })
+        });
+        const data = await res.json();
+        statusEl.textContent = data.success ? `Override set for ${target} → ${value}%` : "Failed";
+        statusEl.style.color = data.success ? "#0f0" : "#f00";
+    } catch {
+        statusEl.textContent = "Error";
+        statusEl.style.color = "#f00";
+    }
+}
+
+// --- Clear override ---
+async function clearOverride() {
+    const target = userSelect.value;
+
+    try {
+        const res = await fetch("/admin/override", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ targetUser: target, value: "CLEAR" })
+        });
+        const data = await res.json();
+        statusEl.textContent = data.success ? `Override cleared for ${target}` : "Failed";
+        statusEl.style.color = data.success ? "#0f0" : "#f00";
+    } catch {
+        statusEl.textContent = "Error";
+        statusEl.style.color = "#f00";
+    }
+}
+
+// --- Navigation ---
+function back() { window.location.href = "detector.html"; }
+function logout() {
+    localStorage.removeItem("username");
+    localStorage.removeItem("isAdmin");
+    window.location.href = "login.html";
+}
+</script>
+
+</body>
+</html>
